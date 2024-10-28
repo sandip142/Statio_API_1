@@ -1,21 +1,26 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const Station = require('./models/Station');
+const Station = require('./Models/station'); // Assuming the Station model is correctly set up
 const cors = require('cors'); 
+const dotenv = require('dotenv');
+const { DB_NAME } = require('./constant'); // Import DB_NAME
+
+dotenv.config({ path: "./.env" }); // Correct path to .env
 
 // Initialize Express app
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-
-// Middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // Middleware to parse JSON requests
 
 // Connect to MongoDB
-mongoose.connect('mongodb+srv://kankharesandip78:Sandip142@cluster0.sfkjp5n.mongodb.net/IRCTC?retryWrites=true&w=majority&appName=Cluster0', {
-}).then(() => console.log('MongoDB connected'))
+mongoose.connect(`${process.env.MONGODB_URL}/${DB_NAME}`, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection failed:', err));
 
 // Create Station API (POST)
@@ -58,7 +63,7 @@ app.put('/stations/:code', async (req, res) => {
     const station = await Station.findOneAndUpdate(
       { stationCode: req.params.code },
       req.body,
-      { new: true }
+      { new: true, runValidators: true } // Ensures validators are run on update
     );
     if (!station) {
       return res.status(404).json({ message: 'Station not found' });
